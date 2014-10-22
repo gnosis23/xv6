@@ -4,7 +4,16 @@
  * the current_thread, and set next_thread to 0.
  * Use eax as a temporary register, which should be caller saved.
  */
-	.globl thread_switch
+  .globl thread_switch
 thread_switch:
 	/* YOUR CODE HERE */
+  pushal
+  movl current_thread, %eax
+  movl %esp, (%eax)
+  movl next_thread, %eax
+  movl $0, %edx
+  movl %edx, next_thread
+  movl %eax, current_thread
+  movl (%eax), %esp
+  popal
 	ret				/* pop return address from stack */
