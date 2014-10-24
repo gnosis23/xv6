@@ -13,6 +13,17 @@ sys_fork(void)
   return fork();
 }
 
+int 
+sys_sthread_create(void)
+{
+  int a;
+  if(argint(0, &a) < 0)
+    return -1;
+  FUNC func;
+  *(int*)&func = a;
+  return sthread_create(func);
+}
+
 int
 sys_exit(void)
 {

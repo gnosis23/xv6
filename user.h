@@ -24,6 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int date(struct rtcdate*);
+int sthread_create(void (*func)());
 
 // ulib.c
 int stat(char*, struct stat*);

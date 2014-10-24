@@ -166,6 +166,69 @@ fork(void)
   return pid;
 }
 
+int sthread_create(FUNC func) {
+  int i, pid;
+  struct proc *np;
+
+  // Allocate process.
+  if((np = allocproc()) == 0)
+    return -1;
+
+  // Copy process state from p.
+  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
+    kfree(np->kstack);
+    np->kstack = 0;
+    np->state = UNUSED;
+    return -1;
+  }
+
+
+  np->sz = PGROUNDUP(proc->sz + PGSIZE);
+  np->parent = proc;
+  *np->tf = *proc->tf;
+
+  // Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+
+//-------------------------------------
+
+  // the thread  has its own stack
+  char *mem;
+
+  // todo: clean this thread's stack
+  uint vstart = np->sz - PGSIZE;
+
+  // change eip to mythread
+  np->tf->eip = (uint)func;
+
+  if((mem = kalloc()) == 0)
+    panic("pthread mem.");
+  memset(mem, 0, PGSIZE);
+
+  if(mappages(np->pgdir, (void*)vstart, PGSIZE, v2p(mem), PTE_A|PTE_U|PTE_W) < 0)
+    panic("pthread mappage");
+
+  np->tf->esp = vstart + PGSIZE;
+
+//-------------------------------------
+
+  for(i = 0; i < NOFILE; i++)
+    if(proc->ofile[i])
+      np->ofile[i] = filedup(proc->ofile[i]);
+  np->cwd = idup(proc->cwd);
+
+  safestrcpy(np->name, proc->name, sizeof(proc->name));
+ 
+  pid = np->pid;
+
+  // lock to force the compiler to emit the np->state write last.
+  acquire(&ptable.lock);
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+  
+  return pid;
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.

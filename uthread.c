@@ -93,21 +93,26 @@ mythread(void)
   int i;
   printf(1, "my thread running\n");
   for (i = 0; i < 5; i++) {
-    printf(1, "my thread 0x%x\n", (int) current_thread);
-    thread_yield();
+    printf(1, "[p=%d] my thread 0x%x\n",getpid(), i);
+    sleep(100);
   }
   printf(1, "my thread: exit\n");
-  current_thread->state = FREE;
-  thread_schedule();
+  exit();
 }
 
 
 int 
 main(int argc, char *argv[]) 
 {
-  thread_init();
-  thread_create(mythread);
-  thread_create(mythread);
-  thread_schedule();
+  int i;
+  // thread_init();
+  sthread_create(mythread);
+  //thread_create(mythread);
+  for (i = 0; i < 5; i++) {
+    printf(1, "[p=%d] main %d\n", getpid(), i);
+    sleep(100);
+  }
+  //thread_schedule();
+  wait();
   return 0;
 }
