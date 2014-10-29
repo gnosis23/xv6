@@ -100,6 +100,8 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_date(void);
 extern int sys_sthread_create(void);
+extern int sys_sthread_wait(void);
+extern int sys_sthread_exit(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -125,6 +127,8 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_date]    sys_date,
 [SYS_sthread_create]    sys_sthread_create,
+[SYS_sthread_wait]      sys_sthread_wait,
+[SYS_sthread_exit]      sys_sthread_exit,
 };
 
 // static char *syscall_name[] = {

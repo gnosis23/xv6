@@ -24,6 +24,18 @@ sys_sthread_create(void)
   return sthread_create(func);
 }
 
+int 
+sys_sthread_exit(void)
+{
+  return sthread_exit();
+}
+
+int 
+sys_sthread_wait(void)
+{
+  return sthread_wait();
+}
+
 int
 sys_exit(void)
 {

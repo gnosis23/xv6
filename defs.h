@@ -120,6 +120,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             sthread_create(FUNC func);
+int             sthread_wait(void);
+int             sthread_exit(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

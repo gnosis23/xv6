@@ -23,3 +23,5 @@
 #define SYS_date   22
 
 #define SYS_sthread_create 25
+#define SYS_sthread_wait   26
+#define SYS_sthread_exit   27
