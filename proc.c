@@ -166,6 +166,26 @@ fork(void)
   return pid;
 }
 
+void*
+memmove2(void *dst, const void *src, uint n)
+{
+  const char *s;
+  char *d;
+
+  s = src;
+  d = dst;
+  if(s < d && s + n > d){
+    s += n;
+    d += n;
+    while(n-- > 0)
+      *--d = *--s;
+  } else
+    while(n-- > 0)
+      *d++ = *s++;
+
+  return dst;
+}
+
 int
 clone(void *stack, int size)
 {
@@ -176,19 +196,34 @@ clone(void *stack, int size)
   if((np = allocproc()) == 0)
     return -1;
 
-  // Copy process state from p.
-  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
-    kfree(np->kstack);
-    np->kstack = 0;
-    np->state = UNUSED;
-    return -1;
-  }
+  // diff with fork
+  // ------------------------------------------------------
+  //cprintf("stack = %x, size = %x\n", (uint)stack, size);
+
+  // share page dir with the parent
+  np->pgdir = proc->pgdir;
+
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
 
+  uint oesp = np->tf->esp;
+  uint oebp = np->tf->ebp;
+  //cprintf("old esp = %x, old ebp = %x\n", oesp, oebp);
+
+  // ret + 2 args
+  uint offset = oebp - oesp + 4 * 4;
+
+  uint newesp = (uint)stack + size - offset;
+  memmove2((void*)newesp, (void*)oesp, offset);
+
+  np->tf->esp = newesp;
+  np->tf->ebp = (oebp - oesp + newesp);
+  //cprintf("new esp = %x, new ebp = %x\n", newesp, np->tf->ebp);
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
+  // ------------------------------------------------------
 
   for(i = 0; i < NOFILE; i++)
     if(proc->ofile[i])
@@ -332,17 +367,23 @@ wait(void)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
+        // reap debug
+        // cprintf("[%x]reaping child %x\n", proc->pid, p->pid);
+
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        if (p->pgdir && p->pgdir != proc->pgdir) {
+          freevm(p->pgdir);
+        }
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
         release(&ptable.lock);
+
         return pid;
       }
     }

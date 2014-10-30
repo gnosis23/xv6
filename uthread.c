@@ -10,13 +10,9 @@
 #define STACK_SIZE  8192
 #define MAX_THREAD  4
 
-void thread_create(void *stack, int size) {
-  int pid = clone(stack, size);
-  printf(1, "clone %d\n", pid);
-}
 
-static void 
-mythread(void)
+static void* 
+mythread(void* v)
 {
   int i;
   printf(1, "my thread running\n");
@@ -25,7 +21,7 @@ mythread(void)
     sleep(100);
   }
   printf(1, "my thread: exit\n");
-  exit();
+  return (void*)0;
 }
 
 
@@ -33,14 +29,18 @@ int
 main(int argc, char *argv[]) 
 {
   int i;
-  sthread_create(mythread);
-  thread_create((void*)20, 4096);
+  int nthread = 10;
+  for (i = 0; i < nthread; i++) {
+    thread_create(mythread, (void*)1);
+  }
 
   for (i = 0; i < 5; i++) {
     printf(1, "[p=%d] main %d\n", getpid(), i);
     sleep(100);
   }
-  //thread_schedule();
-  wait();
-  return 0;
+
+  for (i = 0; i < nthread; i++)
+    wait();
+
+  exit();
 }

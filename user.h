@@ -40,3 +40,6 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+// thread.h
+void* thread_create(void *(*func)(void*), void *arg);
