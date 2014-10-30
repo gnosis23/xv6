@@ -13,6 +13,17 @@ sys_fork(void)
   return fork();
 }
 
+int
+sys_clone(void) {
+  char *stack;
+  int sz;
+  if (argint(1, &sz) < 0)
+    panic("sys_clone failed\n");
+  if (argptr(0, &stack, sz) < 0)
+    panic("sys_clone failed\n");
+  return clone(stack, sz);
+}
+
 int 
 sys_sthread_create(void)
 {

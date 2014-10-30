@@ -330,7 +330,6 @@ copyuvm(pde_t *pgdir, uint sz)
       goto bad;
 
   }
-  cprintf("copyuvm flags %x\n", flags);
   return d;
 
 bad:

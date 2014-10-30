@@ -23,3 +23,4 @@
 #define SYS_date   22
 
 #define SYS_sthread_create 25
+#define SYS_clone 26
