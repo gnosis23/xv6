@@ -4,6 +4,8 @@
 #include "spinlock.h"
 #include "fs.h"
 #include "buf.h"
+#include "mmu.h"
+#include "proc.h"
 
 // Simple logging that allows concurrent FS system calls.
 //
@@ -45,6 +47,7 @@ struct log {
   struct logheader lh;
 };
 struct log log;
+struct buf *lbuf[MAXOPBLOCKS];
 
 static void recover_from_log(void);
 static void commit();
@@ -71,11 +74,12 @@ install_trans(void)
   int tail;
 
   for (tail = 0; tail < log.lh.n; tail++) {
-    struct buf *lbuf = bread(log.dev, log.start+tail+1); // read log block
+    // struct buf *lbuf = bread(log.dev, log.start+tail+1); // read log block
     struct buf *dbuf = bread(log.dev, log.lh.sector[tail]); // read dst
-    memmove(dbuf->data, lbuf->data, BSIZE);  // copy block to dst
+cprintf("copy log sector[%d] => data sector [%d]\n", tail + 1, log.lh.sector[tail]);
+    memmove(dbuf->data, lbuf[tail]->data, BSIZE);  // copy block to dst
     bwrite(dbuf);  // write dst to disk
-    brelse(lbuf); 
+    brelse(lbuf[tail]); 
     brelse(dbuf);
   }
 }
@@ -115,6 +119,7 @@ static void
 recover_from_log(void)
 {
   read_head();      
+  //cprintf("recovery: n=%d \n", log.lh.n);
   install_trans(); // if committed, copy from log to disk
   log.lh.n = 0;
   write_head(); // clear the log
@@ -177,12 +182,11 @@ write_log(void)
   int tail;
 
   for (tail = 0; tail < log.lh.n; tail++) {
-    struct buf *to = bread(log.dev, log.start+tail+1); // log block
+    lbuf[tail] = bread(log.dev, log.start+tail+1); // log block
     struct buf *from = bread(log.dev, log.lh.sector[tail]); // cache block
-    memmove(to->data, from->data, BSIZE);
-    bwrite(to);  // write the log
+    memmove(lbuf[tail]->data, from->data, BSIZE);
+    bwrite(lbuf[tail]);  // write the log
     brelse(from); 
-    brelse(to);
   }
 }
 
